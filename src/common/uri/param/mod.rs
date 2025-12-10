@@ -164,23 +164,24 @@ pub mod tokenizer {
                 branch::alt,
                 bytes::complete::{tag, take_until, take_while},
                 combinator::{map, opt, recognize},
-                sequence::{delimited, tuple},
+                sequence::delimited,
+                Parser,
             };
 
-            let (rem, (_, name, value)) = tuple((
+            let (rem, (_, name, value)) = (
                 tag(";"),
                 take_while(I::is_token), //rfc3261 includes other chars as well, needs fixing..
                 opt(map(
-                    tuple((
+                    (
                         tag("="),
                         alt((
                             recognize(delimited(tag("\""), take_until("\""), tag("\""))),
                             take_while(I::is_token),
                         )),
-                    )),
+                    ),
                     |t| t.1,
                 )),
-            ))(part)
+            ).parse(part)
             .map_err(|_: GenericNomError<'a, T>| {
                 TokenizerError::from(("uri param", part)).into()
             })?;

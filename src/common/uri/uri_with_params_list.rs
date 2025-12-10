@@ -95,9 +95,9 @@ pub mod tokenizer {
         //expects to eat all input
         pub fn tokenize(part: T) -> GResult<T, Self> {
             use crate::parser_utils::is_empty_or_fail_with;
-            use nom::multi::many1;
+            use nom::{multi::many1, Parser};
 
-            let (rem, uri_with_params) = many1(uri_with_params::Tokenizer::tokenize)(part)
+            let (rem, uri_with_params) = many1(uri_with_params::Tokenizer::tokenize).parse(part)
                 .map_err(|_| TokenizerError::from(("uri with params", part)).into())?;
             is_empty_or_fail_with(
                 rem,

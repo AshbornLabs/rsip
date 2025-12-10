@@ -85,10 +85,10 @@ mod tokenizer {
         I: nom::AsChar,
     {
         pub fn tokenize(part: T) -> GResult<T, Self> {
-            use nom::{branch::alt, bytes::complete::take_until, combinator::rest};
+            use nom::{branch::alt, bytes::complete::take_until, combinator::rest, Parser};
 
             let (rem, scheme) =
-                alt((take_until(" "), rest))(part).map_err(|_: GenericNomError<'a, T>| {
+                alt((take_until(" "), rest)).parse(part).map_err(|_: GenericNomError<'a, T>| {
                     TokenizerError::from(("scheme (header)", part)).into()
                 })?;
 

@@ -13,22 +13,22 @@ impl<'a> Tokenize<'a> for DisplayUriParamsTokenizer<'a> {
         use nom::{
             bytes::complete::{tag, take_until},
             combinator::rest,
-            error::VerboseError,
+            error::Error as NomError,
             multi::many0,
-            sequence::tuple,
+            Parser,
         };
 
         if part.contains('<') {
-            let (_, (display_name, _, uri, _, params)) = tuple::<_, _, VerboseError<&str>, _>((
-                take_until("<"),
+            let (_, (display_name, _, uri, _, params)) = (
+                take_until::<_, _, NomError<&str>>("<"),
                 tag("<"),
                 take_until(">"),
                 tag(">"),
                 rest,
-            ))(part)
+            ).parse(part)
             .map_err(|_| Error::tokenizer(("header parts", part)))?;
 
-            let (rem, params) = many0(uri::param::Tokenizer::tokenize)(params)
+            let (rem, params) = many0(uri::param::Tokenizer::tokenize).parse(params)
                 .map_err(|_| Error::tokenizer(("params", part)))?;
             is_empty_or_fail_with(rem, ("params tokenizing left trailing input", part))?;
 
@@ -40,10 +40,10 @@ impl<'a> Tokenize<'a> for DisplayUriParamsTokenizer<'a> {
                 params,
             })
         } else {
-            let (_, (uri, params)) = tuple((
+            let (_, (uri, params)) = (
                 uri::Tokenizer::tokenize_without_params,
                 many0(uri::param::Tokenizer::tokenize),
-            ))(part)?;
+            ).parse(part)?;
 
             Ok(Self {
                 display_name: None,

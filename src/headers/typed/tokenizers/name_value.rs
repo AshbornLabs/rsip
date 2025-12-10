@@ -21,11 +21,12 @@ impl<'a> Tokenize<'a> for NameValueTokenizer<'a> {
             character::complete::space0,
             combinator::{map, opt, rest},
             multi::many1,
-            sequence::{delimited, tuple},
+            sequence::delimited,
+            Parser,
         };
 
         let params = map(
-            tuple((
+            (
                 space0,
                 take_until("="),
                 tag("="),
@@ -36,11 +37,11 @@ impl<'a> Tokenize<'a> for NameValueTokenizer<'a> {
                     rest,
                 )),
                 opt(tag(",")),
-            )),
+            ),
             |tuple| (tuple.1, tuple.3),
         );
 
-        let (rem, params) = many1(params)(part)
+        let (rem, params) = many1(params).parse(part)
             .map_err(|_: NomStrError<'a>| Error::tokenizer(("name value params", part)))?;
         is_empty_or_fail_with(rem, ("name value params", part))?;
 

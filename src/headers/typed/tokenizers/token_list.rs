@@ -12,11 +12,12 @@ impl<'a> Tokenize<'a> for TokenListTokenizer<'a> {
             bytes::complete::{tag, take_until},
             multi::many0,
             sequence::terminated,
+            Parser,
         };
 
         let stopbreak = terminated(take_until(","), tag(","));
 
-        let (last_token, mut tokens) = many0(stopbreak)(part)?;
+        let (last_token, mut tokens) = many0(stopbreak).parse(part)?;
 
         tokens = tokens.into_iter().map(|s| s.trim()).collect::<Vec<_>>();
 

@@ -183,22 +183,22 @@ pub mod tokenizer {
                 bytes::complete::{tag, take_until},
                 character::complete::space1,
                 multi::many0,
-                sequence::tuple,
+                Parser,
             };
 
-            let (rem, (version, _, status_code, _)) = tuple((
+            let (rem, (version, _, status_code, _)) = (
                 version::Tokenizer::tokenize,
                 space1,
                 status_code::Tokenizer::tokenize,
                 tag("\r\n"),
-            ))(part)?;
+            ).parse(part)?;
 
             let (body, (raw_headers, _)) = alt((
-                tuple((take_until("\r\n\r\n"), tag("\r\n\r\n"))),
-                tuple((take_until("\r\n"), tag("\r\n"))),
-            ))(rem)
+                (take_until("\r\n\r\n"), tag("\r\n\r\n")),
+                (take_until("\r\n"), tag("\r\n")),
+            )).parse(rem)
             .map_err(|_: NomError<'a>| TokenizerError::from(("headers", rem)).into())?;
-            let (rem, headers) = many0(header::Tokenizer::tokenize)(raw_headers)?;
+            let (rem, headers) = many0(header::Tokenizer::tokenize).parse(raw_headers)?;
             is_empty_or_fail_with(rem, ("headers", rem))?;
 
             Ok((

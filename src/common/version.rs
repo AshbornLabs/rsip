@@ -97,9 +97,9 @@ mod tokenizer {
         I: AbstractInputItem<I>,
     {
         pub fn tokenize(part: T) -> GResult<T, Self> {
-            use nom::{bytes::complete::tag, character::complete::digit1, sequence::tuple};
+            use nom::{bytes::complete::tag, character::complete::digit1, Parser};
 
-            let (rem, (_, major, _, minor)) = tuple((tag("SIP/"), digit1, tag("."), digit1))(part)
+            let (rem, (_, major, _, minor)) = (tag("SIP/"), digit1, tag("."), digit1).parse(part)
                 .map_err(|_: GenericNomError<'a, T>| {
                     TokenizerError::from(("version", part)).into()
                 })?;

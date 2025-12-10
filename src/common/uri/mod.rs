@@ -247,12 +247,12 @@ pub mod tokenizer {
         TokenizerError: nom::error::ParseError<T>,
     {
         pub fn tokenize(part: T) -> GResult<T, Self> {
-            use nom::{combinator::opt, multi::many0};
+            use nom::{combinator::opt, multi::many0, Parser};
 
-            let (rem, scheme) = opt(scheme::Tokenizer::tokenize)(part)?;
-            let (rem, auth) = opt(auth::Tokenizer::tokenize)(rem)?;
+            let (rem, scheme) = opt(scheme::Tokenizer::tokenize).parse(part)?;
+            let (rem, auth) = opt(auth::Tokenizer::tokenize).parse(rem)?;
             let (rem, host_with_port) = host_with_port::Tokenizer::tokenize(rem)?;
-            let (rem, params) = many0(param::Tokenizer::tokenize)(rem)?;
+            let (rem, params) = many0(param::Tokenizer::tokenize).parse(rem)?;
 
             Ok((
                 rem,
@@ -270,10 +270,10 @@ pub mod tokenizer {
         }
 
         pub fn tokenize_without_params(part: T) -> GResult<T, Self> {
-            use nom::combinator::opt;
+            use nom::{combinator::opt, Parser};
 
-            let (rem, scheme) = opt(scheme::Tokenizer::tokenize)(part)?;
-            let (rem, auth) = opt(auth::Tokenizer::tokenize)(rem)?;
+            let (rem, scheme) = opt(scheme::Tokenizer::tokenize).parse(part)?;
+            let (rem, auth) = opt(auth::Tokenizer::tokenize).parse(rem)?;
             let (rem, host_with_port) = host_with_port::Tokenizer::tokenize(rem)?;
 
             Ok((

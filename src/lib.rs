@@ -286,26 +286,21 @@ pub mod prelude {
     };
 }
 
-pub(crate) type NomError<'a> = nom::Err<nom::error::VerboseError<&'a [u8]>>;
-pub(crate) type NomStrError<'a> = nom::Err<nom::error::VerboseError<&'a str>>;
-pub(crate) type GenericNomError<'a, T> = nom::Err<nom::error::VerboseError<T>>;
+pub(crate) type NomError<'a> = nom::Err<nom::error::Error<&'a [u8]>>;
+pub(crate) type NomStrError<'a> = nom::Err<nom::error::Error<&'a str>>;
+pub(crate) type GenericNomError<'a, T> = nom::Err<nom::error::Error<T>>;
 pub(crate) type IResult<'a, T> = Result<(&'a [u8], T), nom::Err<TokenizerError>>;
 //pub(crate) type SResult<'a, T> = Result<(&'a str, T), nom::Err<TokenizerError>>;
 pub(crate) type GResult<I, T> = Result<(I, T), nom::Err<TokenizerError>>;
 
 //need to include &str or &[u8] in definition
 pub trait AbstractInput<'a, I>:
-    nom::InputTakeAtPosition<Item = I>
-    + nom::InputTake
+    nom::Input<Item = I>
     + Clone
     + Copy
     + nom::FindSubstring<&'a str>
-    + nom::Slice<nom::lib::std::ops::RangeFrom<usize>>
-    + nom::InputLength
-    + nom::InputIter
     + nom::Compare<&'a str>
     + nom::Offset
-    + nom::Slice<core::ops::RangeTo<usize>>
     + std::fmt::Debug
     + Into<&'a bstr::BStr>
     + Default
@@ -346,17 +341,15 @@ impl<'a> AbstractInput<'a, u8> for &'a [u8] {
 }
 impl AbstractInputItem<u8> for u8 {
     fn is_alphabetic(c: u8) -> bool {
-        nom::character::is_alphabetic(c)
+        c.is_ascii_alphabetic()
     }
 
     fn is_alphanumeric(c: u8) -> bool {
-        nom::character::is_alphanumeric(c)
+        c.is_ascii_alphanumeric()
     }
 
     fn is_token(c: u8) -> bool {
-        use nom::character::is_alphanumeric;
-
-        is_alphanumeric(c) || "-.!%*_+`'~".contains(char::from(c))
+        c.is_ascii_alphanumeric() || "-.!%*_+`'~".contains(char::from(c))
     }
 }
 
@@ -375,9 +368,7 @@ pub(crate) mod parser_utils {
     use crate::TokenizerError;
 
     pub fn is_token(c: u8) -> bool {
-        use nom::character::is_alphanumeric;
-
-        is_alphanumeric(c) || "-.!%*_+`'~".contains(char::from(c))
+        c.is_ascii_alphanumeric() || "-.!%*_+`'~".contains(char::from(c))
     }
 
     pub fn is_empty_or_fail_with<'a, I, T: crate::AbstractInput<'a, I>, S: Into<&'a bstr::BStr>>(

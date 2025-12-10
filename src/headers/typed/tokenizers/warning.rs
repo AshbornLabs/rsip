@@ -18,13 +18,14 @@ impl<'a> Tokenize<'a> for WarningTokenizer<'a> {
     fn tokenize(part: &'a str) -> Result<Self, Error> {
         use nom::{
             bytes::complete::{tag, take_until},
-            sequence::{terminated, tuple},
+            sequence::terminated,
+            Parser,
         };
 
-        let (text, (code, host)) = tuple((
+        let (text, (code, host)) = (
             terminated(take_until(" "), tag(" ")),
             terminated(take_until(" "), tag(" ")),
-        ))(part)?;
+        ).parse(part)?;
 
         Ok(Self {
             code,

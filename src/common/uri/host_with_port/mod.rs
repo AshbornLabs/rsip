@@ -201,7 +201,7 @@ pub mod tokenizer {
             use nom::{
                 bytes::complete::{tag, take_till1, take_until},
                 combinator::rest,
-                sequence::tuple,
+                Parser,
             };
 
             let (rem, host_with_port) =
@@ -210,11 +210,11 @@ pub mod tokenizer {
                         TokenizerError::from(("host with port", part)).into()
                     })?;
 
-            let (host, port) = match tuple::<_, _, nom::error::VerboseError<T>, _>((
-                take_until(":"),
+            let (host, port) = match (
+                take_until::<_, _, nom::error::Error<T>>(":"),
                 tag(":"),
                 rest,
-            ))(host_with_port)
+            ).parse(host_with_port)
             {
                 Ok((_, (host, _, port))) => (host, Some(port)),
                 Err(_) => {

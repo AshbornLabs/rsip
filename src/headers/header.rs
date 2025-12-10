@@ -276,18 +276,18 @@ pub mod tokenizer {
                 bytes::complete::{tag, take_until, take_while1},
                 character::complete::space0,
                 combinator::{map, rest},
-                sequence::tuple,
+                Parser,
             };
 
-            let (rem, (name, _, _, value)) = tuple((
+            let (rem, (name, _, _, value)) = (
                 take_while1(crate::parser_utils::is_token),
                 tag(":"),
                 space0,
                 alt((
-                    map(tuple((take_until("\r\n"), tag("\r\n"))), |(value, _)| value),
+                    map((take_until("\r\n"), tag("\r\n")), |(value, _)| value),
                     rest,
                 )),
-            ))(part)
+            ).parse(part)
             .map_err(|_: NomError<'a>| TokenizerError::from(("header", part)).into())?;
 
             Ok((rem, (name, value).into()))

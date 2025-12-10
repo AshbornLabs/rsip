@@ -184,10 +184,10 @@ mod tokenizer {
         I: AbstractInputItem<I>,
     {
         pub fn tokenize(part: T) -> GResult<T, Self> {
-            use nom::{branch::alt, bytes::complete::take_until1, combinator::rest};
+            use nom::{branch::alt, bytes::complete::take_until1, combinator::rest, Parser};
 
             let (rem, transport) =
-                alt((take_until1(" "), rest))(part).map_err(|_: GenericNomError<'a, T>| {
+                alt((take_until1(" "), rest)).parse(part).map_err(|_: GenericNomError<'a, T>| {
                     TokenizerError::from(("transport", part)).into()
                 })?;
 

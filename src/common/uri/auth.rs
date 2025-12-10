@@ -96,22 +96,22 @@ pub mod tokenizer {
             use nom::{
                 bytes::complete::{tag, take_till, take_until},
                 combinator::rest,
-                sequence::tuple,
+                Parser,
             };
 
-            let (rem, (auth, _)) = tuple((
+            let (rem, (auth, _)) = (
                 take_till(|c| c == Into::<I>::into(b'.') || c == Into::<I>::into(b'@')),
                 tag("@"),
-            ))(part)
+            ).parse(part)
             .map_err(|_: GenericNomError<'a, T>| {
                 TokenizerError::from(("auth user", part)).into()
             })?;
 
-            let (user, password) = match tuple::<_, _, nom::error::VerboseError<T>, _>((
-                take_until(":"),
+            let (user, password) = match (
+                take_until::<_, _, nom::error::Error<T>>(":"),
                 tag(":"),
                 rest,
-            ))(auth)
+            ).parse(auth)
             {
                 Ok((_, (user, _, password))) => (user, Some(password)),
                 Err(_) => {

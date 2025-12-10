@@ -10,12 +10,13 @@ impl<'a> Tokenize<'a> for NameParamsListTokenizer<'a> {
             bytes::complete::{tag, take_until},
             character::complete::space0,
             multi::many0,
-            sequence::{terminated, tuple},
+            sequence::terminated,
+            Parser,
         };
 
-        let stopbreak = terminated(take_until(","), tuple((tag(","), space0)));
+        let stopbreak = terminated(take_until(","), (tag(","), space0));
 
-        let (rem, media_types) = many0(stopbreak)(part)
+        let (rem, media_types) = many0(stopbreak).parse(part)
             .map_err(|_: NomStrError<'a>| Error::tokenizer(("list media type params", part)))?;
         let mut media_types = media_types
             .into_iter()

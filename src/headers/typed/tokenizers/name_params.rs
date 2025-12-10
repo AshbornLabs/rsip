@@ -19,11 +19,12 @@ impl<'a> Tokenize<'a> for NameParamsTokenizer<'a> {
             character::complete::space0,
             combinator::{map, opt, rest},
             multi::many0,
-            sequence::{delimited, tuple},
+            sequence::delimited,
+            Parser,
         };
 
         let params = map(
-            tuple((
+            (
                 space0,
                 tag(";"),
                 space0,
@@ -35,13 +36,13 @@ impl<'a> Tokenize<'a> for NameParamsTokenizer<'a> {
                     rest,
                 )),
                 opt(tag(",")),
-            )),
+            ),
             |tuple| (tuple.3, tuple.5),
         );
 
-        let (rem, name) = alt((take_until(";"), rest))(part)
+        let (rem, name) = alt((take_until(";"), rest)).parse(part)
             .map_err(|_: NomStrError<'a>| Error::tokenizer(("media type", part)))?;
-        let (rem, params) = many0(params)(rem)
+        let (rem, params) = many0(params).parse(rem)
             .map_err(|_: NomStrError<'a>| Error::tokenizer(("media type params", part)))?;
         is_empty_or_fail_with(rem, ("media type", rem))?;
 
@@ -56,12 +57,13 @@ impl<'a> Tokenize<'a> for NameParamsListTokenizer<'a> {
             bytes::complete::{tag, take_until},
             character::complete::space0,
             multi::many0,
-            sequence::{terminated, tuple},
+            sequence::terminated,
+            Parser,
         };
 
-        let stopbreak = terminated(take_until(","), tuple((tag(","), space0)));
+        let stopbreak = terminated(take_until(","), (tag(","), space0));
 
-        let (rem, media_types) = many0(stopbreak)(part)
+        let (rem, media_types) = many0(stopbreak).parse(part)
             .map_err(|_: NomStrError<'a>| Error::tokenizer(("list media type params", part)))?;
         let mut media_types = media_types
             .into_iter()

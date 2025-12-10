@@ -19,11 +19,12 @@ impl<'a> Tokenize<'a> for AuthTokenizer<'a> {
             character::complete::space0,
             combinator::{map, opt, rest},
             multi::many1,
-            sequence::{delimited, tuple},
+            sequence::delimited,
+            Parser,
         };
 
         let params = map(
-            tuple((
+            (
                 space0,
                 take_until("="),
                 tag("="),
@@ -34,15 +35,15 @@ impl<'a> Tokenize<'a> for AuthTokenizer<'a> {
                     rest,
                 )),
                 opt(tag(",")),
-            )),
+            ),
             |tuple| (tuple.1, tuple.3),
         );
 
         let (rem, _) =
-            space0(part).map_err(|_: NomStrError<'a>| Error::tokenizer(("auth header", part)))?;
+            space0::<_, nom::error::Error<_>>(part).map_err(|_: NomStrError<'a>| Error::tokenizer(("auth header", part)))?;
         let (rem, scheme) = auth::scheme::Tokenizer::tokenize(rem)
             .map_err(|_| Error::tokenizer(("auth header scheme", part)))?;
-        let (rem, params) = many1(params)(rem)
+        let (rem, params) = many1(params).parse(rem)
             .map_err(|_: NomStrError<'a>| Error::tokenizer(("auth header params", part)))?;
         is_empty_or_fail_with(rem, ("auth header params", part))?;
 

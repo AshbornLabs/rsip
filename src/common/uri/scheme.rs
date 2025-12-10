@@ -113,15 +113,15 @@ pub mod tokenizer {
             use nom::{
                 branch::alt,
                 bytes::complete::{tag, tag_no_case, take_until},
-                sequence::tuple,
+                Parser,
             };
 
             let (rem, (scheme, _)) = alt((
-                tuple((tag_no_case("sip"), tag(":"))),
-                tuple((tag_no_case("sips"), tag(":"))),
-                tuple((tag_no_case("tel"), tag(":"))),
-                tuple((take_until("://"), tag("://"))),
-            ))(part)
+                (tag_no_case("sip"), tag(":")),
+                (tag_no_case("sips"), tag(":")),
+                (tag_no_case("tel"), tag(":")),
+                (take_until("://"), tag("://")),
+            )).parse(part)
             .map_err(|_: GenericNomError<'a, T>| TokenizerError::from(("scheme", part)).into())?;
 
             Ok((rem, Tokenizer::from(scheme)))

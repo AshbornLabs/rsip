@@ -113,18 +113,20 @@ pub mod tokenizer {
     {
         //works for request line
         pub fn tokenize(part: T) -> GResult<T, Self> {
-            use nom::bytes::complete::{tag, take_while1};
+            use nom::{bytes::complete::take_while1, Parser};
 
             let (rem, method) =
-                take_while1(I::is_token)(part).map_err(|_: GenericNomError<'a, T>| {
+                take_while1(I::is_token).parse(part).map_err(|_: GenericNomError<'a, T>| {
                     TokenizerError::from(("method", part)).into()
                 })?;
             //TODO: helpful to return early in case we parse a response but maybe it should not
             //be checked here though
-            match tag::<_, _, nom::error::VerboseError<T>>("SIP/")(method) {
-                Err(_) => Ok((rem, Self::from(method))),
-                Ok(_) => Err(TokenizerError::from(("method", part)).into()),
+            // Check if it starts with "SIP/" which would indicate a response, not a method
+            let method_bstr: &bstr::BStr = method.into();
+            if method_bstr.starts_with(b"SIP/") {
+                return Err(TokenizerError::from(("method", part)).into());
             }
+            Ok((rem, Self::from(method)))
         }
     }
 }

@@ -188,12 +188,12 @@ pub mod tokenizer {
 
     impl<'a> Tokenizer<'a> {
         pub fn tokenize(part: &'a [u8]) -> IResult<Self> {
-            use nom::{branch::alt, combinator::map};
+            use nom::{branch::alt, combinator::map, Parser};
 
             let (_, message) = alt((
                 map(response::Tokenizer::tokenize, |r| r.into()),
                 map(request::Tokenizer::tokenize, |r| r.into()),
-            ))(part)?;
+            )).parse(part)?;
 
             Ok((&[], message))
         }

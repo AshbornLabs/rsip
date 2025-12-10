@@ -235,11 +235,11 @@ mod tokenizer {
                 branch::alt,
                 bytes::complete::{tag, take, take_until},
                 combinator::rest,
-                sequence::tuple,
+                Parser,
             };
 
             let (rem, (code, _, reason)) =
-                tuple((take(3usize), tag(" "), alt((take_until("\r\n"), rest))))(part).map_err(
+                (take(3usize), tag(" "), alt((take_until("\r\n"), rest))).parse(part).map_err(
                     |_: GenericNomError<'a, T>| TokenizerError::from(("status", part)).into(),
                 )?;
 

@@ -120,9 +120,9 @@ pub mod tokenizer {
         //can parse both enclosed and plain
         //expects to eat all input
         pub fn tokenize(part: T) -> GResult<T, Self> {
-            use nom::branch::alt;
+            use nom::{branch::alt, Parser};
 
-            alt((Self::tokenize_enclosed, Self::tokenize_plain))(part)
+            alt((Self::tokenize_enclosed, Self::tokenize_plain)).parse(part)
         }
 
         pub fn tokenize_plain(part: T) -> GResult<T, Self> {
@@ -132,18 +132,18 @@ pub mod tokenizer {
                 bytes::complete::{tag, take_until},
                 combinator::{map, rest},
                 multi::many0,
-                sequence::tuple,
+                Parser,
             };
 
             let stopbreak = alt((
-                map(tuple((take_until(","), tag(","))), |(value, _)| value),
+                map((take_until(","), tag(",")), |(value, _)| value),
                 rest,
             ));
 
             let (rem, (uri, params)) =
-                tuple((uri::Tokenizer::tokenize_without_params, stopbreak))(part)?;
+                (uri::Tokenizer::tokenize_without_params, stopbreak).parse(part)?;
 
-            let (params_rem, params) = many0(uri::param::Tokenizer::tokenize)(params)
+            let (params_rem, params) = many0(uri::param::Tokenizer::tokenize).parse(params)
                 .map_err(|_| TokenizerError::from(("params", part)).into())?;
             is_empty_or_fail_with(params_rem, ("params tokenizing left trailing input", part))?;
 
@@ -165,26 +165,26 @@ pub mod tokenizer {
                 bytes::complete::{tag, take_until},
                 character::complete::space0,
                 combinator::{map, rest},
-                error::VerboseError,
+                error::Error,
                 multi::many0,
-                sequence::tuple,
+                Parser,
             };
 
             let stopbreak = alt((
-                map(tuple((take_until(","), tag(","))), |(value, _)| value),
+                map((take_until(","), tag(",")), |(value, _)| value),
                 rest,
             ));
 
-            let (rem, (_, _, uri, _, params)) = tuple::<_, _, VerboseError<T>, _>((
-                space0,
+            let (rem, (_, _, uri, _, params)) = (
+                space0::<_, Error<T>>,
                 tag("<"),
                 take_until(">"),
                 tag(">"),
                 stopbreak,
-            ))(part)
+            ).parse(part)
             .map_err(|_| TokenizerError::from(("header parts", part)).into())?;
 
-            let (params_rem, params) = many0(uri::param::Tokenizer::tokenize)(params)
+            let (params_rem, params) = many0(uri::param::Tokenizer::tokenize).parse(params)
                 .map_err(|_| TokenizerError::from(("params", part)).into())?;
             is_empty_or_fail_with(params_rem, ("params tokenizing left trailing input", part))?;
 

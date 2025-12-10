@@ -19,17 +19,17 @@ pub struct ViaTokenizer<'a> {
 impl<'a> Tokenize<'a> for ViaTokenizer<'a> {
     fn tokenize(part: &'a str) -> Result<Self, Error> {
         use nom::{
-            bytes::complete::tag, character::complete::space1, multi::many0, sequence::tuple,
+            bytes::complete::tag, character::complete::space1, multi::many0, Parser,
         };
 
-        let (_, (version, _, transport, _, uri, params)) = tuple((
+        let (_, (version, _, transport, _, uri, params)) = (
             version::Tokenizer::tokenize,
             tag("/"),
             transport::Tokenizer::tokenize,
             space1,
             uri::Tokenizer::tokenize_without_params,
             many0(param::Tokenizer::tokenize),
-        ))(part)
+        ).parse(part)
         .map_err(|_| Error::tokenizer(("via (typed) header", part)))?;
 
         Ok(Self {
